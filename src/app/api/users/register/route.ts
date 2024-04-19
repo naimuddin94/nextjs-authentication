@@ -11,7 +11,6 @@ export async function POST(request: NextRequest) {
     const reqBody = await request.json();
     const { username, email, password } = reqBody;
     // TODO: validation
-    console.log(reqBody);
 
     const userExists = await User.findOne({ email });
 
@@ -25,22 +24,28 @@ export async function POST(request: NextRequest) {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const user = await User.create({
-      username,
+    const newUser = new User({
       email,
+      username,
       password: hashedPassword,
     });
+
+    const savedUser = await newUser.save();
+
+    // Remove password field from the response
+    const userWithoutPassword = savedUser.toObject();
+    delete userWithoutPassword.password;
 
     // send mail verification
     await sendEmail({
       email,
       emailType: "VERIFY",
-      userId: user._id,
+      userId: savedUser._id.toString(),
     });
 
     return NextResponse.json({
       message: "User created successfully",
-      data: user,
+      data: userWithoutPassword,
       success: true,
     });
   } catch (error: any) {
