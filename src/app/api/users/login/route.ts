@@ -17,6 +17,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
+    if (!user.isVerified) {
+      return NextResponse.json(
+        { message: "Email not verified" },
+        { status: 400 }
+      );
+    }
     const passwordValid = await bcrypt.compare(password, user.password);
 
     if (!passwordValid) {
